@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import textwrap
 import os
 import re
-
+import fitz
 try:
     import fitz
 except ImportError:
