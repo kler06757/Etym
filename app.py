@@ -28,7 +28,27 @@ def get_wiktionary_data(word):
         return "No specific English etymology found.", link_to_source
     except Exception:
         return "Error connecting to Wiktionary.", link_to_source
-
+def get_ahd_data(word):
+    url = f"https://www.ahdictionary.com/word/search.html?q={word}"
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200: 
+            return "Word not found on AHD.", url
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # AHD обычно хранит этимологию в блоках с классом "ety"
+        ety_elements = soup.find_all(class_="ety")
+        
+        if ety_elements:
+            # Собираем текст из всех найденных блоков этимологии
+            text_blocks = [el.get_text(strip=True) for el in ety_elements]
+            return "\n\n".join(text_blocks), url
+            
+        return "Etymology section not explicitly found on AHD.", url
+    except Exception as e:
+        return f"Error connecting to AHD: {e}", url
 def get_etymonline_data(word):
     url = f"https://www.etymonline.com/word/{word}"
     try:
@@ -94,18 +114,18 @@ def get_pdf_data(word, uploaded_files, max_results=3):
 st.set_page_config(page_title="Etymology Aggregator", page_icon="📜", layout="centered")
 
 st.title("📜 Advanced Etymology Aggregator")
-st.markdown("Поисковый инструмент для компьютерной лингвистики. Ищет данные по API, сайтам и локальным книгам.")
+st.markdown("An English etymology and word origins search tool. It looks up information through APIs, websites, and local files.")
 
 # Боковая панель для загрузки ваших книг
-st.sidebar.header("📚 Ваши PDF Словари")
-st.sidebar.info("Загрузите сюда ваши исторические словари (например, Chambers 1874), чтобы программа искала слова внутри них.")
-uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", type=["pdf"], accept_multiple_files=True)
+st.sidebar.header("📚 Your PDF dictionaries")
+st.sidebar.info("Upload your dictionaries or textbooks here (e.g., Chambers 1874), and the program will find the information for you with links.")
+uploaded_pdfs = st.sidebar.file_uploader("Add a PDF here", type=["pdf"], accept_multiple_files=True)
 
-user_word = st.text_input("Enter a word to analyze:", placeholder="Например: knight, chivalry, pilgrim").strip().lower()
+user_word = st.text_input("Enter a word to analyze:", placeholder="For instance: knight, chivalry, pilgrim").strip().lower()
 
-if st.button("Начать поиск", type="primary"):
+if st.button("To begine the searching", type="primary"):
     if user_word:
-        with st.spinner(f"Ищем '{user_word}' по всем базам данных..."):
+        with st.spinner(f"I'm looking for '{user_word}' on the sources..."):
             
             # 1. Запуск ваших веб-функций
             wik_text, wik_link = get_wiktionary_data(user_word)
@@ -124,13 +144,13 @@ if st.button("Начать поиск", type="primary"):
             # 2. Запуск вашей функции чтения PDF (если файлы загружены)
             if uploaded_pdfs:
                 st.divider()
-                st.subheader("📖 Поиск по локальным PDF")
+                st.subheader("📖 The serch through the local PDF")
                 # Возвращаем файлы в начало (на случай повторного поиска)
                 for f in uploaded_pdfs: f.seek(0) 
                 
                 pdf_text, pdf_source = get_pdf_data(user_word, uploaded_pdfs)
                 st.write(pdf_text)
             else:
-                st.info("💡 PDF-файлы не загружены. Поиск выполнен только по онлайн-источникам.")
+                st.info("💡 The PDF files were not uploaded. The scan was provided through online sources only.")
     else:
-        st.warning("Пожалуйста, введите слово для поиска.")
+        st.warning("Please, enter a word to search.")
