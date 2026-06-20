@@ -64,7 +64,7 @@ def get_ahd_data(word):
             text_blocks = [el.get_text(strip=True) for el in ety_elements]
             return "\n\n".join(text_blocks), url
             
-        return "Etymology section not explicitly found on AHD.", url
+        return "Click the link below to read the information.", url
     except Exception as e:
         return f"Error connecting to AHD: {e}", url
 
