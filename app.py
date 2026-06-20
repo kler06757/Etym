@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import fitz  # PyMuPDF
 
-# --- ВАШ ДВИГАТЕЛЬ (Оставлен без изменений логики) ---
+# --- ВАШ ДВИГАТЕЛЬ (Оставлен без изменений логики) --- 
 
 def get_wiktionary_data(word):
     url = f"https://en.wiktionary.org/w/api.php?action=query&prop=extracts&titles={word}&format=json&explaintext=1"
