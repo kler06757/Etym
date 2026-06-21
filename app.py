@@ -226,7 +226,7 @@ st.markdown("Поисковый инструмент для лингвистов
 
 # Настройки поиска (расширенные)
 st.write("### ⚙️ Источники поиска")
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+col1, col2, col3, col4, col5, col6, = st.columns(6)
 with col1: use_wik = st.checkbox("Wiktionary", value=True)
 with col2: use_etym = st.checkbox("Etymonline", value=True)
 with col3: use_ahd = st.checkbox("AHD", value=True)
