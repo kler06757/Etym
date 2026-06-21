@@ -4,6 +4,12 @@ from bs4 import BeautifulSoup
 import re
 import fitz  # PyMuPDF
 
+def clean_text(text):
+    # This finds periods followed by a space and a capital letter, 
+    # and splits them into neat paragraphs.
+    cleaned = re.sub(r'\.\s+([A-Z])', r'.\n\n\1', text)
+    return cleaned
+
 # --- ДВИГАТЕЛЬ 1: WIKTIONARY ---
 def get_wiktionary_data(word):
     url = f"https://en.wiktionary.org/w/api.php?action=query&prop=extracts&titles={word}&format=json&explaintext=1"
@@ -254,53 +260,55 @@ st.sidebar.header("📚 Ваши PDF Словари")
 st.sidebar.info("Загрузите сюда исторические словари для локального поиска.")
 uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", type=["pdf"], accept_multiple_files=True)
 
-user_word = st.text_input("Enter a word or phrase to analyze:", placeholder="For example: chivalry, knight, bite the bullet").strip().lower()
+user_word = st.text_input("Введите слово или фразу для поиска:", placeholder="Например: chivalry, knight, bite the bullet").strip().lower()
 
 if st.button("Начать поиск", type="primary"):
     if user_word:
         with st.spinner(f"Опрашиваем лингвистические базы данных для '{user_word}'..."):
             
+        # --- Wiktionary ---
             if use_wik:
                 wik_text, wik_link = get_wiktionary_data(user_word)
-                st.subheader("🏛️ Wiktionary API")
-                st.write(wik_text)
-                st.markdown(f"[Ссылка на источник]({wik_link})")
+                st.markdown(f"### [🏛️ Wiktionary API]({wik_link})")
+                st.write(clean_text(wik_text))
                 st.divider()
             
-
-            if use_mw:
-                mw_text, mw_link = get_mw_data(user_word, mw_key)
-                st.subheader("📙 Merriam-Webster Collegiate API")
-                st.write(mw_text)
-                if mw_link: st.markdown(f"[Ссылка на источник]({mw_link})")
-                st.divider()
-
+            # --- Etymonline ---
             if use_etym:
                 etym_text, etym_link = get_etymonline_data(user_word)
-                st.subheader("🕰️ Online Etymology Dictionary")
-                st.write(etym_text)
-                st.markdown(f"[Ссылка на источник]({etym_link})")
+                st.markdown(f"### [🕰️ Online Etymology Dictionary]({etym_link})")
+                st.write(clean_text(etym_text))
                 st.divider()
 
+            # --- Merriam-Webster ---
+            if use_mw:
+                mw_text, mw_link = get_mw_data(user_word, mw_key)
+                if mw_link:
+                    st.markdown(f"### [📙 Merriam-Webster Collegiate]({mw_link})")
+                else:
+                    st.markdown("### 📙 Merriam-Webster Collegiate")
+                st.write(clean_text(mw_text))
+                st.divider()
+
+            # --- AHD Dictionary ---
             if use_ahd:
                 ahd_text, ahd_link = get_ahd_data(user_word)
-                st.subheader("🦅 American Heritage Dictionary")
-                st.write(ahd_text)
-                st.markdown(f"[Ссылка на источник]({ahd_link})")
+                st.markdown(f"### [🦅 American Heritage Dictionary]({ahd_link})")
+                st.write(clean_text(ahd_text))
                 st.divider()
                 
+            # --- The Phrase Finder ---
             if use_phrase:
                 phrase_text, phrase_link = get_phrasefinder_data(user_word)
-                st.subheader("💬 The Phrase Finder (Idioms)")
-                st.write(phrase_text)
-                st.markdown(f"[Ссылка на источник]({phrase_link})")
+                st.markdown(f"### [💬 The Phrase Finder (Idioms)]({phrase_link})")
+                st.write(clean_text(phrase_text))
                 st.divider()
                 
+            # --- Multitran ---
             if use_multi:
                 multi_text, multi_link = get_multitran_data(user_word)
-                st.subheader("🇷🇺 Multitran (Translation Variants)")
-                st.write(multi_text)
-                st.markdown(f"[Смотреть все значения]({multi_link})")
+                st.markdown(f"### [🇷🇺 Multitran (Translations)]({multi_link})")
+                st.write(clean_text(multi_text))
                 st.divider()
             
             if uploaded_pdfs:
