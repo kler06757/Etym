@@ -10,6 +10,31 @@ def clean_text(text):
     cleaned = re.sub(r'\.\s+([A-Z])', r'.\n\n\1', text)
     return cleaned
 
+# --- ДВИГАТЕЛЬ ИИ: GEMINI SUMMARIZER ---
+def get_ai_summary(word, all_gathered_text, api_key):
+    if not api_key:
+        return "Ключ Gemini API не найден."
+    if len(all_gathered_text) < 50:
+        return "Недостаточно данных для анализа."
+        
+    try:
+        genai.configure(api_key=api_key)
+        # Используем самую быструю модель
+        model = genai.GenerativeModel('gemini-1.5-flash') 
+        
+        prompt = f"""
+        Ты выступаешь в роли эксперта-лингвиста. Проанализируй собранные словарные данные для слова '{word}'.
+        Напиши связное, увлекательное эссе (3-4 предложения) об этимологии этого слова, сделав особый акцент на его культурном и историческом подтексте. 
+        Используй только следующие данные:
+        
+        {all_gathered_text}
+        """
+        
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Ошибка генерации: {e}"
+
 # --- ДВИГАТЕЛЬ 1: WIKTIONARY ---
 def get_wiktionary_data(word):
     url = f"https://en.wiktionary.org/w/api.php?action=query&prop=extracts&titles={word}&format=json&explaintext=1"
@@ -254,6 +279,11 @@ try:
     mw_key = st.secrets["MW_KEY"]
 except:
     mw_key = ""
+    
+    try:
+    gemini_key = st.secrets["GEMINI_KEY"]
+except:
+    gemini_key = ""
 
 st.sidebar.divider()
 st.sidebar.header("📚 Ваши PDF Словари")
@@ -263,8 +293,27 @@ uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", ty
 user_word = st.text_input("Введите слово или фразу для поиска:", placeholder="Например: chivalry, knight, bite the bullet").strip().lower()
 
 if st.button("Начать поиск", type="primary"):
+ if st.button("Начать поиск", type="primary"):
     if user_word:
-        with st.spinner(f"Опрашиваем лингвистические базы данных для '{user_word}'..."):
+        with st.spinner(f"Опрашиваем базы данных и анализируем слово '{user_word}'..."):
+            
+            # Корзина для текстов
+            collected_text = ""
+            
+            # 1. Сначала просто собираем тексты (не выводя их на экран)
+            if use_wik:
+                wik_text, wik_link = get_wiktionary_data(user_word)
+                collected_text += wik_text + "\n"
+            if use_etym:
+                etym_text, etym_link = get_etymonline_data(user_word)
+                collected_text += etym_text + "\n"
+            # (добавьте сюда сбор из AHD, Oxford и Merriam-Webster, если они включены)
+
+
+            st.success("✨ **Лингвистический анализ (AI Summary)**")
+            ai_result = get_ai_summary(user_word, collected_text, gemini_key)
+            st.write(ai_result)
+            st.divider()
             
         # --- Wiktionary ---
             if use_wik:
