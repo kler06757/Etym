@@ -269,7 +269,7 @@ if st.button("Начать поиск", type="primary"):
         # --- Wiktionary ---
             if use_wik:
                 wik_text, wik_link = get_wiktionary_data(user_word)
-                st.markdown(f"### [🏛️ Wiktionary API]({wik_link})")
+                st.markdown(f"### [🏛️ Wiktionary]({wik_link})")
                 st.write(clean_text(wik_text))
                 st.divider()
             
