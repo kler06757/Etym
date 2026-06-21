@@ -274,13 +274,13 @@ with col3:
     use_ahd = st.checkbox("🦅 AHD", value=True)
     use_phrase = st.checkbox("💬 Phrase Finder", value=False)
  
-# --- СЕКРЕТНЫЕ КЛЮЧИ API (Берем из хранилища Streamlit) ---
+# --- СЕКРЕТНЫЕ КЛЮЧИ API ---
 try:
     mw_key = st.secrets["MW_KEY"]
 except:
     mw_key = ""
     
- try:
+try:
     gemini_key = st.secrets["GEMINI_KEY"]
 except:
     gemini_key = ""
