@@ -267,7 +267,7 @@ col1, col2, col3 = st.columns(3)
 # Аккуратно распределяем галочки по этим колонкам
 with col1:
     use_wik = st.checkbox("🏛️ Wiktionary", value=True)
-    use_multi = st.checkbox("🇷🇺 Multitran", value=False)
+    use_multi = st.checkbox("Ⓜ️ Multitran", value=False)
     
 with col2:
     use_etym = st.checkbox("🕰️ Etymonline", value=True)
@@ -357,7 +357,7 @@ if st.button("Начать поиск", type="primary"):
             # --- Multitran ---
             if use_multi:
                 multi_text, multi_link = get_multitran_data(user_word)
-                st.markdown(f" [🇷🇺 Multitran (Translations)]({multi_link})")
+                st.markdown(f" [Ⓜ️ Multitran (Translations)]({multi_link})")
                 st.write(clean_text(multi_text))
                 st.divider()
             
