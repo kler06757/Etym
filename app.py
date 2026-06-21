@@ -131,6 +131,40 @@ def get_pdf_data(word, uploaded_files, max_results=3):
         return "\n\n---\n\n".join(results), "Local PDF"
     return f"No matches found for '{word}' in the uploaded files.", "Local PDF"
 
+# --- ДВИГАТЕЛЬ 6: MULTITRAN (Англо-Русский перевод) ---
+def get_multitran_data(word):
+    # l1=1 (English), l2=2 (Russian)
+    url = f"https://www.multitran.com/m.exe?s={word}&l1=1&l2=2"
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200: 
+            return "Word not found on Multitran.", url
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Multitran хранит переводы в ячейках таблицы с классом "trans"
+        trans_cells = soup.find_all('td', class_='trans')
+        
+        if trans_cells:
+            translations = []
+            for cell in trans_cells:
+                text = cell.get_text(strip=True)
+                # Отсеиваем мусор и слишком длинные/короткие строки
+                if text and len(text) > 1 and "{" not in text:
+                    translations.append(text)
+                    if len(translations) >= 15: # Берем топ-15 вариантов
+                        break
+            
+            # Убираем дубликаты
+            unique_trans = list(dict.fromkeys(translations))
+            if unique_trans:
+                formatted_text = "**Современные варианты перевода:**\n\n" + "; ".join(unique_trans)
+                return formatted_text, url
+                
+        return "Translation section could not be parsed cleanly.", url
+    except Exception as e:
+        return f"Error connecting to Multitran: {e}", url
 
 # --- ВЕБ-ИНТЕРФЕЙС (STREAMLIT) ---
 
@@ -139,9 +173,8 @@ st.set_page_config(page_title="Etymology Aggregator", page_icon="📜", layout="
 st.title("📜 Advanced Etymology Aggregator")
 st.markdown("Поисковый инструмент для компьютерной лингвистики. Ищет данные по онлайн-словарям, базам идиом и вашим локальным книгам.")
 
-# Настройки поиска (теперь в 4 колонки!)
 st.write("### ⚙️ Источники поиска")
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     use_wik = st.checkbox("Wiktionary", value=True)
 with col2:
@@ -149,7 +182,9 @@ with col2:
 with col3:
     use_ahd = st.checkbox("AHD Dictionary", value=True)
 with col4:
-    use_phrase = st.checkbox("Phrase Finder", value=True) # Новый источник!
+    use_phrase = st.checkbox("Phrase Finder", value=True)
+with col5:
+    use_multi = st.checkbox("Multitran (RU)", value=False) # По умолчанию выключен
 
 # Боковая панель
 st.sidebar.header("📚 Ваши PDF Словари")
@@ -194,7 +229,15 @@ if st.button("Начать поиск", type="primary"):
                 st.write(phrase_text)
                 st.markdown(f"[Ссылка на источник]({phrase_link})")
                 st.divider()
-            
+
+            # --- Multitran ---
+            if use_multi:
+                multi_text, multi_link = get_multitran_data(user_word)
+                st.subheader("🇷🇺 Multitran (Translation Variants)")
+                st.write(multi_text)
+                st.markdown(f"[Смотреть все значения]({multi_link})")
+                st.divider()
+                
             # --- PDF Поиск ---
             if uploaded_pdfs:
                 st.subheader("📖 Поиск по локальным PDF")
