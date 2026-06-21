@@ -229,11 +229,11 @@ st.write("### ⚙️ Источники поиска")
 col1, col2, col3, col4, col5, col6, = st.columns(6)
 with col1: use_wik = st.checkbox("Wiktionary", value=True)
 with col2: use_etym = st.checkbox("Etymonline", value=True)
-with col3: use_ahd = st.checkbox("AHD", value=True)
-with col4: use_phrase = st.checkbox("Phrase Finder", value=False) 
+with col3: use_ahd = st.checkbox("AHD", value=False)
+with col4: use_mw = st.checkbox("Merriam-Webster", value=False)
 with col5: use_multi = st.checkbox("Multitran", value=False)
-with col6: use_mw = st.checkbox("Merriam-Webster", value=True)
-    
+with col6: use_phrase = st.checkbox("Phrase Finder", value=False) 
+ 
 # --- СЕКРЕТНЫЕ КЛЮЧИ API (Берем из хранилища Streamlit) ---
 try:
     mw_key = st.secrets["MW_KEY"]
