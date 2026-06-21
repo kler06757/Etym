@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import fitz  # PyMuPDF
-import google.generativeai as genai  
+from groq import Groq
 
 def clean_text(text):
     # This finds periods followed by a space and a capital letter, 
@@ -11,30 +11,32 @@ def clean_text(text):
     cleaned = re.sub(r'\.\s+([A-Z])', r'.\n\n\1', text)
     return cleaned
 
-# --- ДВИГАТЕЛЬ ИИ: GEMINI SUMMARIZER ---
+# --- ДВИГАТЕЛЬ ИИ: GROQ (Llama 3) ---
 def get_ai_summary(word, all_gathered_text, api_key):
     if not api_key:
-        return "Ключ Gemini API не найден."
+        return "Ключ Groq API не найден."
     if len(all_gathered_text) < 50:
         return "Недостаточно данных для анализа."
         
     try:
-        genai.configure(api_key=api_key)
-        # Используем самую быструю модель
-        model = genai.GenerativeModel('gemini-pro')
+        client = Groq(api_key=api_key)
         
-        prompt = f"""
-        Ты выступаешь в роли эксперта-лингвиста. Проанализируй собранные словарные данные для слова '{word}'.
-        Напиши связное, увлекательное эссе (3-4 предложения) об этимологии этого слова, сделав особый акцент на его культурном и историческом подтексте. 
-        Используй только следующие данные:
+        # Инструкция для ИИ
+        system_prompt = "Ты выступаешь в роли блестящего эксперта-лингвиста. Твоя задача — проанализировать сырые словарные данные и написать связное, увлекательное академическое эссе (3-4 предложения) об этимологии слова. Сделай акцент на его культурном и историческом подтексте. Отвечай на русском языке."
+        user_prompt = f"Проанализируй слово '{word}' на основе этих данных:\n\n{all_gathered_text}"
         
-        {all_gathered_text}
-        """
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama3-70b-8192", # Используем самую умную модель из доступных
+            temperature=0.5 # Чуть снижаем "фантазию", чтобы придерживаться фактов
+        )
         
-        response = model.generate_content(prompt)
-        return response.text
+        return chat_completion.choices[0].message.content
     except Exception as e:
-        return f"Ошибка генерации: {e}"
+        return f"Ошибка генерации Groq: {e}"
 
 # --- ДВИГАТЕЛЬ 1: WIKTIONARY ---
 def get_wiktionary_data(word):
@@ -282,9 +284,9 @@ except:
     mw_key = ""
     
 try:
-    gemini_key = st.secrets["GEMINI_KEY"]
+    groq_key = st.secrets["GROQ_API_KEY"]
 except:
-    gemini_key = ""
+    groq_key = ""
 
 st.sidebar.divider()
 st.sidebar.header("📚 Ваши PDF Словари")
@@ -307,11 +309,10 @@ if st.button("Начать поиск", type="primary"):
             if use_etym:
                 etym_text, etym_link = get_etymonline_data(user_word)
                 collected_text += etym_text + "\n"
-            # (добавьте сюда сбор из AHD, Oxford и Merriam-Webster, если они включены)
-
+    
 
             st.success("✨ **Лингвистический анализ (AI Summary)**")
-            ai_result = get_ai_summary(user_word, collected_text, gemini_key)
+            ai_result = get_ai_summary(user_word, collected_text, groq_key)
             st.write(ai_result)
             st.divider()
             
