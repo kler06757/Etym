@@ -51,15 +51,18 @@ def get_etymonline_data(word):
 # --- ДВИГАТЕЛЬ 3: AMERICAN HERITAGE DICTIONARY ---
 def get_ahd_data(word):
     url = f"https://www.ahdictionary.com/word/search.html?q={word}"
+    fallback_message = f"Parsing was blocked by the site. Please click the link below to read the information about the word '{word}'."
+    
     try:
-        # A stronger disguise to bypass basic bot-protection
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=5) # Добавили timeout, чтобы сайт не "висел"
+        
+        # Если сайт заблокировал нас (ошибка 403) или не ответил (не 200)
         if response.status_code != 200: 
-            return "Word not found or site blocked the automated request.", url
+            return fallback_message, url
         
         soup = BeautifulSoup(response.text, 'html.parser')
         ety_elements = soup.find_all(class_="ety")
@@ -68,9 +71,12 @@ def get_ahd_data(word):
             text_blocks = [el.get_text(strip=True) for el in ety_elements]
             return "\n\n".join(text_blocks), url
             
-        return "Etymology section not found for this specific word.", url
-    except Exception as e:
-        return f"Error connecting to AHD: {e}", url
+        # Если сайт открылся, но блок этимологии не найден
+        return fallback_message, url
+        
+    except Exception:
+        # Если пропал интернет или сайт "упал"
+        return fallback_message, url
 
 # --- ДВИГАТЕЛЬ 4: THE PHRASE FINDER (НОВЫЙ!) ---
 def get_phrasefinder_data(phrase):
@@ -138,25 +144,25 @@ def get_pdf_data(word, uploaded_files, max_results=3):
 # --- ДВИГАТЕЛЬ 6: MULTITRAN (Англо-Русский перевод) ---
 def get_multitran_data(word):
     url = f"https://www.multitran.com/m.exe?s={word}&l1=1&l2=2"
+    fallback_message = f"Parsing was blocked by the site. Please click the link below to read the translation variants for the word '{word}'."
+    
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=5)
+        
         if response.status_code != 200: 
-            return "Website blocked the automated request.", url
+            return fallback_message, url
         
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # NLP Trick: Instead of relying on CSS classes, we search for translation links directly
         translation_links = soup.find_all('a', href=re.compile(r'm\.exe\?t='))
         
         if translation_links:
             translations = []
             for link in translation_links:
                 text = link.get_text(strip=True)
-                # Filter using Regex: Only keep the result if it contains Cyrillic characters
                 if text and re.search(r'[а-яА-Я]', text):
                     translations.append(text)
                     if len(translations) >= 15: 
@@ -166,9 +172,11 @@ def get_multitran_data(word):
             if unique_trans:
                 return "**Топ вариантов перевода:**\n\n" + "; ".join(unique_trans), url
                 
-        return "Translation could not be parsed. The site may be blocking bots.", url
-    except Exception as e:
-        return f"Error: {e}", url
+        # Если защита Мультитрана скрыла от нас таблицу с переводами
+        return fallback_message, url
+        
+    except Exception:
+        return fallback_message, url
 
 # --- ВЕБ-ИНТЕРФЕЙС (STREAMLIT) ---
 
