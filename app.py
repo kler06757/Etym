@@ -233,7 +233,6 @@ with col3: use_ahd = st.checkbox("AHD", value=True)
 with col4: use_phrase = st.checkbox("Phrase Finder", value=False) 
 with col5: use_multi = st.checkbox("Multitran", value=False)
 with col6: use_mw = st.checkbox("Merriam-Webster", value=True)
-with col7: use_oxford = st.checkbox("Oxford", value=False)
     
 # --- СЕКРЕТНЫЕ КЛЮЧИ API (Берем из хранилища Streamlit) ---
 try:
@@ -242,12 +241,11 @@ except:
     mw_key = ""
 
 st.sidebar.divider()
-
 st.sidebar.header("📚 Ваши PDF Словари")
 st.sidebar.info("Загрузите сюда исторические словари для локального поиска.")
 uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", type=["pdf"], accept_multiple_files=True)
 
-user_word = st.text_input("Enter a word or phrase to analyze:", placeholder="Например: chivalry, knight, bite the bullet").strip().lower()
+user_word = st.text_input("Enter a word or phrase to analyze:", placeholder="For example: chivalry, knight, bite the bullet").strip().lower()
 
 if st.button("Начать поиск", type="primary"):
     if user_word:
@@ -260,12 +258,6 @@ if st.button("Начать поиск", type="primary"):
                 st.markdown(f"[Ссылка на источник]({wik_link})")
                 st.divider()
             
-            if use_etym:
-                etym_text, etym_link = get_etymonline_data(user_word)
-                st.subheader("🕰️ Online Etymology Dictionary")
-                st.write(etym_text)
-                st.markdown(f"[Ссылка на источник]({etym_link})")
-                st.divider()
 
             if use_mw:
                 mw_text, mw_link = get_mw_data(user_word, mw_key)
@@ -274,10 +266,11 @@ if st.button("Начать поиск", type="primary"):
                 if mw_link: st.markdown(f"[Ссылка на источник]({mw_link})")
                 st.divider()
 
-            if use_oxford:
-                ox_text, ox_link = get_oxford_data(user_word, oxford_id, oxford_key)
-                st.subheader("📘 Oxford Dictionaries API")
-                st.write(ox_text)
+            if use_etym:
+                etym_text, etym_link = get_etymonline_data(user_word)
+                st.subheader("🕰️ Online Etymology Dictionary")
+                st.write(etym_text)
+                st.markdown(f"[Ссылка на источник]({etym_link})")
                 st.divider()
 
             if use_ahd:
