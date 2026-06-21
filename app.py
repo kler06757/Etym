@@ -292,7 +292,7 @@ uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", ty
 
 user_word = st.text_input("Введите слово или фразу для поиска:", placeholder="Например: chivalry, knight, bite the bullet").strip().lower()
 
- if st.button("Начать поиск", type="primary"):
+if st.button("Начать поиск", type="primary"):
     if user_word:
         with st.spinner(f"Опрашиваем базы данных и анализируем слово '{user_word}'..."):
             
