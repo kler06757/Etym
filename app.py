@@ -30,8 +30,8 @@ def get_ai_summary(word, all_gathered_text, api_key):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            model="llama3-70b-8192", # Используем самую умную модель из доступных
-            temperature=0.5 # Чуть снижаем "фантазию", чтобы придерживаться фактов
+            model="openai/gpt-oss-120b", 
+            temperature=0.5 
         )
         
         return chat_completion.choices[0].message.content
