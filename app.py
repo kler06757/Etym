@@ -178,39 +178,116 @@ def get_multitran_data(word):
     except Exception:
         return fallback_message, url
 
+# --- ДВИГАТЕЛЬ 7: MERRIAM-WEBSTER API (НОВЫЙ!) ---
+def get_mw_data(word, api_key):
+    if not api_key:
+        return "⚠️ Пожалуйста, введите ваш Merriam-Webster API Key в боковом меню слева.", ""
+    
+    url = f"https://www.dictionaryapi.com/api/v3/references/collegiate/json/{word}?key={api_key}"
+    try:
+        response = requests.get(url)
+        if response.status_code != 200: 
+            return "Ошибка подключения к Merriam-Webster API.", ""
+        
+        data = response.json()
+        # Если слово не найдено, API возвращает список похожих слов
+        if not data or not isinstance(data[0], dict):
+            suggestions = ", ".join(data[:5]) if data else "Нет вариантов."
+            return f"Слово не найдено. Возможно, вы имели в виду: {suggestions}", ""
+
+        entry = data[0]
+        result_text = ""
+        
+        if 'shortdef' in entry:
+            result_text += "**Краткое значение:** " + "; ".join(entry['shortdef']) + "\n\n"
+            
+        if 'et' in entry:
+            # Парсинг сложного JSON-массива этимологии от MW
+            et_text = str(entry['et'][0][1])
+            # Очистка от технических тегов вроде {it}
+            et_text = re.sub(r'\{.*?\}', '', et_text)
+            result_text += "**Этимология:** " + et_text
+
+        if not result_text:
+            result_text = "Слово найдено, но раздел этимологии отсутствует."
+
+        return result_text, f"https://www.merriam-webster.com/dictionary/{word}"
+    except Exception as e:
+        return f"Error: {e}", ""
+
+# --- ДВИГАТЕЛЬ 8: OXFORD DICTIONARIES API (НОВЫЙ!) ---
+def get_oxford_data(word, app_id, app_key):
+    if not app_id or not app_key:
+        return "⚠️ Пожалуйста, введите ваши Oxford App ID и App Key в боковом меню.", ""
+    
+    # API Oxford чувствителен к регистру
+    url = f"https://od-api-sandbox.oxforddictionaries.com/api/v2/entries/en-gb/{word.lower()}"
+    headers = {"app_id": app_id, "app_key": app_key}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 404: 
+            return "Слово не найдено в словаре Oxford.", ""
+        if response.status_code == 403: 
+            return "Ошибка авторизации. Проверьте правильность ваших ключей.", ""
+        if response.status_code != 200: 
+            return f"Ошибка сервера Oxford: {response.status_code}", ""
+
+        data = response.json()
+        results = data.get('results', [])
+        if not results: 
+            return "Нет данных.", ""
+
+        etymologies = []
+        for lexicalEntry in results[0].get('lexicalEntries', []):
+            for entry in lexicalEntry.get('entries', []):
+                if 'etymologies' in entry:
+                    etymologies.extend(entry['etymologies'])
+
+        if etymologies:
+            return "**Этимология:**\n\n" + "\n\n".join(etymologies), ""
+            
+        return "Специфическая этимология для этого слова не найдена в API Oxford.", ""
+    except Exception as e:
+        return f"Error: {e}", ""
+
 # --- ВЕБ-ИНТЕРФЕЙС (STREAMLIT) ---
 
 st.set_page_config(page_title="Etymology Aggregator", page_icon="📜", layout="wide")
 
 st.title("📜 Advanced Etymology Aggregator")
-st.markdown("Поисковый инструмент для компьютерной лингвистики. Ищет данные по онлайн-словарям, базам идиом и вашим локальным книгам.")
+st.markdown("Поисковый инструмент для лингвистов. Ищет данные по онлайн-словарям, базам идиом и вашим локальным книгам. ⚠️ Хотим предупредить: некотрые источники (такие как Multitran, AHD Dictionary) имеют строгую систему отслеживания автоматического сбора данных, поэтому текст может не отображаться в приложении. Если вы столкнулись с этим, пожалуйста, перейдите по ссылке для быстрого доступа к оригинальной статье на сайте.")
 
+# Настройки поиска (расширенные)
 st.write("### ⚙️ Источники поиска")
-col1, col2, col3, col4, col5 = st.columns(5)
-with col1:
-    use_wik = st.checkbox("Wiktionary", value=True)
-with col2:
-    use_etym = st.checkbox("Etymonline", value=True)
-with col3:
-    use_ahd = st.checkbox("AHD Dictionary", value=True)
-with col4:
-    use_phrase = st.checkbox("Phrase Finder", value=True)
-with col5:
-    use_multi = st.checkbox("Multitran (RU)", value=False) # По умолчанию выключен
+col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+with col1: use_wik = st.checkbox("Wiktionary", value=True)
+with col2: use_etym = st.checkbox("Etymonline", value=True)
+with col3: use_ahd = st.checkbox("AHD", value=True)
+with col4: use_phrase = st.checkbox("Phrase Finder", value=False) 
+with col5: use_multi = st.checkbox("Multitran", value=False)
+with col6: use_mw = st.checkbox("Merriam-Webster", value=True)
+with col7: use_oxford = st.checkbox("Oxford", value=False)
+    
+# Боковая панель для Паролей и Книг
+st.sidebar.header("🔑 API Credentials")
+st.sidebar.markdown("Введите ключи для доступа к закрытым академическим базам:")
+mw_key = st.sidebar.text_input("Merriam-Webster API Key", type="password")
+oxford_id = st.sidebar.text_input("Oxford App ID", type="password")
+oxford_key = st.sidebar.text_input("Oxford App Key", type="password")
 
-# Боковая панель
+st.sidebar.divider()
+
 st.sidebar.header("📚 Ваши PDF Словари")
-st.sidebar.info("Загрузите сюда ваши исторические словари, чтобы программа искала слова внутри них.")
+st.sidebar.info("Загрузите сюда исторические словари для локального поиска.")
 uploaded_pdfs = st.sidebar.file_uploader("Перетащите PDF сюда", type=["pdf"], accept_multiple_files=True)
 
-# Обратите внимание на обновленный placeholder с идиомой!
-user_word = st.text_input("Enter a word or phrase to analyze:", placeholder="Например: chivalry, pilgrim, или bite the bullet").strip().lower()
+user_word = st.text_input("Enter a word or phrase to analyze:", placeholder="Например: chivalry, knight, bite the bullet").strip().lower()
 
 if st.button("Начать поиск", type="primary"):
     if user_word:
-        with st.spinner(f"Ищем '{user_word}' по всем базам данных..."):
+        with st.spinner(f"Опрашиваем лингвистические базы данных для '{user_word}'..."):
             
-            # --- Wiktionary ---
             if use_wik:
                 wik_text, wik_link = get_wiktionary_data(user_word)
                 st.subheader("🏛️ Wiktionary API")
@@ -218,7 +295,6 @@ if st.button("Начать поиск", type="primary"):
                 st.markdown(f"[Ссылка на источник]({wik_link})")
                 st.divider()
             
-            # --- Etymonline ---
             if use_etym:
                 etym_text, etym_link = get_etymonline_data(user_word)
                 st.subheader("🕰️ Online Etymology Dictionary")
@@ -226,7 +302,19 @@ if st.button("Начать поиск", type="primary"):
                 st.markdown(f"[Ссылка на источник]({etym_link})")
                 st.divider()
 
-            # --- AHD Dictionary ---
+            if use_mw:
+                mw_text, mw_link = get_mw_data(user_word, mw_key)
+                st.subheader("📙 Merriam-Webster Collegiate API")
+                st.write(mw_text)
+                if mw_link: st.markdown(f"[Ссылка на источник]({mw_link})")
+                st.divider()
+
+            if use_oxford:
+                ox_text, ox_link = get_oxford_data(user_word, oxford_id, oxford_key)
+                st.subheader("📘 Oxford Dictionaries API")
+                st.write(ox_text)
+                st.divider()
+
             if use_ahd:
                 ahd_text, ahd_link = get_ahd_data(user_word)
                 st.subheader("🦅 American Heritage Dictionary")
@@ -234,29 +322,26 @@ if st.button("Начать поиск", type="primary"):
                 st.markdown(f"[Ссылка на источник]({ahd_link})")
                 st.divider()
                 
-            # --- The Phrase Finder (Новый блок!) ---
             if use_phrase:
                 phrase_text, phrase_link = get_phrasefinder_data(user_word)
-                st.subheader("💬 The Phrase Finder (Idioms & Origins)")
+                st.subheader("💬 The Phrase Finder (Idioms)")
                 st.write(phrase_text)
                 st.markdown(f"[Ссылка на источник]({phrase_link})")
                 st.divider()
-
-            # --- Multitran ---
+                
             if use_multi:
                 multi_text, multi_link = get_multitran_data(user_word)
                 st.subheader("🇷🇺 Multitran (Translation Variants)")
                 st.write(multi_text)
                 st.markdown(f"[Смотреть все значения]({multi_link})")
                 st.divider()
-                
-            # --- PDF Поиск ---
+            
             if uploaded_pdfs:
                 st.subheader("📖 Поиск по локальным PDF")
                 for f in uploaded_pdfs: f.seek(0) 
                 pdf_text, pdf_source = get_pdf_data(user_word, uploaded_pdfs)
                 st.write(pdf_text)
-            else:
-                st.info("💡 PDF-файлы не загружены. Вы можете перетащить их в меню слева для поиска по локальным книгам.")
+            elif not (use_wik or use_etym or use_ahd or use_phrase or use_multi or use_mw or use_oxford):
+                st.info("Вы не выбрали ни одного источника для поиска.")
     else:
         st.warning("Пожалуйста, введите слово или фразу для поиска.")
