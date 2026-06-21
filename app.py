@@ -319,14 +319,14 @@ if st.button("Начать поиск", type="primary"):
         # --- Wiktionary ---
             if use_wik:
                 wik_text, wik_link = get_wiktionary_data(user_word)
-                st.markdown(f"### [🏛️ Wiktionary]({wik_link})")
+                st.markdown(f" [🏛️ Wiktionary]({wik_link})")
                 st.write(clean_text(wik_text))
                 st.divider()
             
             # --- Etymonline ---
             if use_etym:
                 etym_text, etym_link = get_etymonline_data(user_word)
-                st.markdown(f"### [🕰️ Online Etymology Dictionary]({etym_link})")
+                st.markdown(f" [🕰️ Online Etymology Dictionary]({etym_link})")
                 st.write(clean_text(etym_text))
                 st.divider()
 
@@ -334,30 +334,30 @@ if st.button("Начать поиск", type="primary"):
             if use_mw:
                 mw_text, mw_link = get_mw_data(user_word, mw_key)
                 if mw_link:
-                    st.markdown(f"### [📙 Merriam-Webster Collegiate]({mw_link})")
+                    st.markdown(f" [📙 Merriam-Webster Collegiate]({mw_link})")
                 else:
-                    st.markdown("### 📙 Merriam-Webster Collegiate")
+                    st.markdown(" 📙 Merriam-Webster Collegiate")
                 st.write(clean_text(mw_text))
                 st.divider()
 
             # --- AHD Dictionary ---
             if use_ahd:
                 ahd_text, ahd_link = get_ahd_data(user_word)
-                st.markdown(f"### [🦅 American Heritage Dictionary]({ahd_link})")
+                st.markdown(f" [🦅 American Heritage Dictionary]({ahd_link})")
                 st.write(clean_text(ahd_text))
                 st.divider()
                 
             # --- The Phrase Finder ---
             if use_phrase:
                 phrase_text, phrase_link = get_phrasefinder_data(user_word)
-                st.markdown(f"### [💬 The Phrase Finder (Idioms)]({phrase_link})")
+                st.markdown(f" [💬 The Phrase Finder (Idioms)]({phrase_link})")
                 st.write(clean_text(phrase_text))
                 st.divider()
                 
             # --- Multitran ---
             if use_multi:
                 multi_text, multi_link = get_multitran_data(user_word)
-                st.markdown(f"### [🇷🇺 Multitran (Translations)]({multi_link})")
+                st.markdown(f" [🇷🇺 Multitran (Translations)]({multi_link})")
                 st.write(clean_text(multi_text))
                 st.divider()
             
