@@ -224,15 +224,24 @@ st.set_page_config(page_title="Etymology Aggregator", page_icon="📜", layout="
 st.title("📜 Advanced Etymology Aggregator")
 st.markdown("Поисковый инструмент для лингвистов. Ищет данные по онлайн-словарям, базам идиом и вашим локальным книгам. ⚠️ Хотим предупредить: некотрые источники (такие как Multitran, AHD Dictionary) имеют строгую систему отслеживания автоматического сбора данных, поэтому текст может не отображаться в приложении. Если вы столкнулись с этим, пожалуйста, перейдите по ссылке для быстрого доступа к оригинальной статье на сайте.")
 
-# Настройки поиска (расширенные)
+# Настройки поиска (Профессиональная сетка)
 st.write("### ⚙️ Источники поиска")
-col1, col2, col3, col4, col5, col6, = st.columns(6)
-with col1: use_wik = st.checkbox("Wiktionary", value=True)
-with col2: use_etym = st.checkbox("Etymonline", value=True)
-with col3: use_ahd = st.checkbox("AHD", value=False)
-with col4: use_mw = st.checkbox("Merriam-Webster", value=False)
-with col5: use_multi = st.checkbox("Multitran", value=False)
-with col6: use_phrase = st.checkbox("Phrase Finder", value=False) 
+
+# Создаем 3 одинаковые колонки
+col1, col2, col3 = st.columns(3)
+
+# Аккуратно распределяем галочки по этим колонкам
+with col1:
+    use_wik = st.checkbox("🏛️ Wiktionary", value=True)
+    use_multi = st.checkbox("🇷🇺 Multitran", value=False)
+    
+with col2:
+    use_etym = st.checkbox("🕰️ Etymonline", value=True)
+    use_mw = st.checkbox("📙 Merriam-Webster", value=True)
+
+with col3:
+    use_ahd = st.checkbox("🦅 AHD", value=True)
+    use_phrase = st.checkbox("💬 Phrase Finder", value=False)
  
 # --- СЕКРЕТНЫЕ КЛЮЧИ API (Берем из хранилища Streamlit) ---
 try:
