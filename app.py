@@ -52,10 +52,14 @@ def get_etymonline_data(word):
 def get_ahd_data(word):
     url = f"https://www.ahdictionary.com/word/search.html?q={word}"
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        # A stronger disguise to bypass basic bot-protection
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
         response = requests.get(url, headers=headers)
         if response.status_code != 200: 
-            return "Word not found on AHD.", url
+            return "Word not found or site blocked the automated request.", url
         
         soup = BeautifulSoup(response.text, 'html.parser')
         ety_elements = soup.find_all(class_="ety")
@@ -64,7 +68,7 @@ def get_ahd_data(word):
             text_blocks = [el.get_text(strip=True) for el in ety_elements]
             return "\n\n".join(text_blocks), url
             
-        return "Click the link below to read the information.", url
+        return "Etymology section not found for this specific word.", url
     except Exception as e:
         return f"Error connecting to AHD: {e}", url
 
@@ -133,38 +137,38 @@ def get_pdf_data(word, uploaded_files, max_results=3):
 
 # --- ДВИГАТЕЛЬ 6: MULTITRAN (Англо-Русский перевод) ---
 def get_multitran_data(word):
-    # l1=1 (English), l2=2 (Russian)
     url = f"https://www.multitran.com/m.exe?s={word}&l1=1&l2=2"
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'
+        }
         response = requests.get(url, headers=headers)
         if response.status_code != 200: 
-            return "Word not found on Multitran.", url
+            return "Website blocked the automated request.", url
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Multitran хранит переводы в ячейках таблицы с классом "trans"
-        trans_cells = soup.find_all('td', class_='trans')
+        # NLP Trick: Instead of relying on CSS classes, we search for translation links directly
+        translation_links = soup.find_all('a', href=re.compile(r'm\.exe\?t='))
         
-        if trans_cells:
+        if translation_links:
             translations = []
-            for cell in trans_cells:
-                text = cell.get_text(strip=True)
-                # Отсеиваем мусор и слишком длинные/короткие строки
-                if text and len(text) > 1 and "{" not in text:
+            for link in translation_links:
+                text = link.get_text(strip=True)
+                # Filter using Regex: Only keep the result if it contains Cyrillic characters
+                if text and re.search(r'[а-яА-Я]', text):
                     translations.append(text)
-                    if len(translations) >= 15: # Берем топ-15 вариантов
+                    if len(translations) >= 15: 
                         break
             
-            # Убираем дубликаты
             unique_trans = list(dict.fromkeys(translations))
             if unique_trans:
-                formatted_text = "**Современные варианты перевода:**\n\n" + "; ".join(unique_trans)
-                return formatted_text, url
+                return "**Топ вариантов перевода:**\n\n" + "; ".join(unique_trans), url
                 
-        return "Translation section could not be parsed cleanly.", url
+        return "Translation could not be parsed. The site may be blocking bots.", url
     except Exception as e:
-        return f"Error connecting to Multitran: {e}", url
+        return f"Error: {e}", url
 
 # --- ВЕБ-ИНТЕРФЕЙС (STREAMLIT) ---
 
