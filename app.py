@@ -280,7 +280,7 @@ try:
 except:
     mw_key = ""
     
-    try:
+ try:
     gemini_key = st.secrets["GEMINI_KEY"]
 except:
     gemini_key = ""
