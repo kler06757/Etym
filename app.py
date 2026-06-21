@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import fitz  # PyMuPDF
+import google.generativeai as genai  # <--- ВАМ НУЖНО ДОБАВИТЬ ТОЛЬКО ЭТУ СТРОЧКУ
 
 def clean_text(text):
     # This finds periods followed by a space and a capital letter, 
