@@ -215,41 +215,7 @@ def get_mw_data(word, api_key):
     except Exception as e:
         return f"Error: {e}", ""
 
-# --- ДВИГАТЕЛЬ 8: OXFORD DICTIONARIES API (НОВЫЙ!) ---
-def get_oxford_data(word, app_id, app_key):
-    if not app_id or not app_key:
-        return "⚠️ Пожалуйста, введите ваши Oxford App ID и App Key в боковом меню.", ""
-    
-    # API Oxford чувствителен к регистру
-    url = f"https://od-api-sandbox.oxforddictionaries.com/api/v2/entries/en-gb/{word.lower()}"
-    headers = {"app_id": app_id, "app_key": app_key}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 404: 
-            return "Слово не найдено в словаре Oxford.", ""
-        if response.status_code == 403: 
-            return "Ошибка авторизации. Проверьте правильность ваших ключей.", ""
-        if response.status_code != 200: 
-            return f"Ошибка сервера Oxford: {response.status_code}", ""
 
-        data = response.json()
-        results = data.get('results', [])
-        if not results: 
-            return "Нет данных.", ""
-
-        etymologies = []
-        for lexicalEntry in results[0].get('lexicalEntries', []):
-            for entry in lexicalEntry.get('entries', []):
-                if 'etymologies' in entry:
-                    etymologies.extend(entry['etymologies'])
-
-        if etymologies:
-            return "**Этимология:**\n\n" + "\n\n".join(etymologies), ""
-            
-        return "Специфическая этимология для этого слова не найдена в API Oxford.", ""
-    except Exception as e:
-        return f"Error: {e}", ""
 
 # --- ВЕБ-ИНТЕРФЕЙС (STREAMLIT) ---
 
@@ -269,12 +235,11 @@ with col5: use_multi = st.checkbox("Multitran", value=False)
 with col6: use_mw = st.checkbox("Merriam-Webster", value=True)
 with col7: use_oxford = st.checkbox("Oxford", value=False)
     
-# Боковая панель для Паролей и Книг
-st.sidebar.header("🔑 API Credentials")
-st.sidebar.markdown("Введите ключи для доступа к закрытым академическим базам:")
-mw_key = st.sidebar.text_input("Merriam-Webster API Key", type="password")
-oxford_id = st.sidebar.text_input("Oxford App ID", type="password")
-oxford_key = st.sidebar.text_input("Oxford App Key", type="password")
+# --- СЕКРЕТНЫЕ КЛЮЧИ API (Берем из хранилища Streamlit) ---
+try:
+    mw_key = st.secrets["MW_KEY"]
+except:
+    mw_key = ""
 
 st.sidebar.divider()
 
